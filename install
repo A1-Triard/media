@@ -1,0 +1,2 @@
+#!/bin/sh
+install -D update $HOME/media/update
