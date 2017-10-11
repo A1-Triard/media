@@ -40,10 +40,11 @@ Linux)
     for d in $list; do
         if [ "$(linux_removable $(/usr/bin/basename $d))" = "1" ]; then
             if [ -z "$(echo $mount_list | /bin/grep $d)" ]; then
-                if /usr/bin/pmount -A -c utf8 $d 2>/dev/null; then
-                    point=$HOME/media/$(/usr/bin/basename $d)
-                    if [ -z "$(echo $mount_list | /bin/grep $point)" ]; then
-                        /bin/ln -s /media/$(basename $d) $point
+                point=$HOME/media/$(/usr/bin/basename $d)
+                if [ \! -e $point ]; then
+                    if /usr/bin/pmount -A -c utf8 $d 2>/dev/null; then
+                        /bin/mkdir -p $(/usr/bin/dirname $point)
+                        /bin/ln -s /media/$(/usr/bin/basename $d) $point
                         echo "#!/bin/sh" > ${point}_umount
                         echo "/usr/bin/pumount $point || (/bin/sleep 3 ; exit 1) || exit 1" >> ${point}_umount
                         echo "/bin/rm -f $point" >> ${point}_umount
