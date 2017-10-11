@@ -1,83 +1,99 @@
 #!/bin/sh
 
-linux_removable() {
-	DEV="${1%[0-9]*}"
-	REMOVABLE="/sys/block/$DEV/removable"
+#
+# Copyright 2017 Warlock <internalmike@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-	if [ -e "$REMOVABLE" ]; then
-		cat "$REMOVABLE"
-	else
-		echo "0"
-	fi
+linux_removable() {
+    DEV="${1%[0-9]*}"
+    REMOVABLE="/sys/block/$DEV/removable"
+
+    if [ -e "$REMOVABLE" ]; then
+        cat "$REMOVABLE"
+    else
+        echo "0"
+    fi
 }
 
 if [ -x /bin/uname ]; then
-	system="$(/bin/uname)"
+    system="$(/bin/uname)"
 else
-	system="$(/usr/bin/uname)"
+    system="$(/usr/bin/uname)"
 fi
 
 case "$system" in
 Linux)
-	mount_list=$(/bin/mount | /usr/bin/awk '{ print $1 $3 }')
-	list=$(/usr/bin/find /dev -maxdepth 1 -name '[s,h]d[a-z]*' -print | /usr/bin/sort -r)
-	for d in $list; do
-		if [ "$(linux_removable $(/usr/bin/basename $d))" = "1" ]; then
-			if [ -z "$(echo $mount_list | /bin/grep $d)" ]; then
-				if /usr/bin/pmount -A -c utf8 $d 2>/dev/null; then
-					point=$HOME/media/$(/usr/bin/basename $d)
-					if [ -z "$(echo $mount_list | /bin/grep $point)" ]; then
-						/bin/ln -s /media/$(basename $d) $point
-						echo "#!/bin/sh" > ${point}_umount
-						echo "/usr/bin/pumount $point || (/bin/sleep 3 ; exit 1) || exit 1" >> ${point}_umount
-						echo "/bin/rm -f $point" >> ${point}_umount
-						echo "/bin/rm -f ${point}_umount" >> ${point}_umount
-						/bin/chmod a+x ${point}_umount
-						echo $d -\> $point
-					fi
-				fi
-			fi
-		fi
-	done
-	/bin/sleep 1
-	;;
+    mount_list=$(/bin/mount | /usr/bin/awk '{ print $1 $3 }')
+    list=$(/usr/bin/find /dev -maxdepth 1 -name '[s,h]d[a-z]*' -print | /usr/bin/sort -r)
+    for d in $list; do
+        if [ "$(linux_removable $(/usr/bin/basename $d))" = "1" ]; then
+            if [ -z "$(echo $mount_list | /bin/grep $d)" ]; then
+                if /usr/bin/pmount -A -c utf8 $d 2>/dev/null; then
+                    point=$HOME/media/$(/usr/bin/basename $d)
+                    if [ -z "$(echo $mount_list | /bin/grep $point)" ]; then
+                        /bin/ln -s /media/$(basename $d) $point
+                        echo "#!/bin/sh" > ${point}_umount
+                        echo "/usr/bin/pumount $point || (/bin/sleep 3 ; exit 1) || exit 1" >> ${point}_umount
+                        echo "/bin/rm -f $point" >> ${point}_umount
+                        echo "/bin/rm -f ${point}_umount" >> ${point}_umount
+                        /bin/chmod a+x ${point}_umount
+                        echo $d -\> $point
+                    fi
+                fi
+            fi
+        fi
+    done
+    /bin/sleep 1
+    ;;
 FreeBSD)
-	mount_list=$(/sbin/mount | /usr/bin/awk '{ print $1 $3 }')
-	list=$(/usr/bin/find /dev -depth 1 -name 'da*' -print | /usr/bin/sort -r)
-	for d in $list; do
-		if [ -z "$(echo $mount_list | /usr/bin/grep $d)" ]; then
-			if [ -n "$(/usr/bin/file -Ls $d | /usr/bin/grep FAT)" ]; then
-				point=$HOME/media/$(/usr/bin/basename $d)
-				if [ -z "$(echo $mount_list | /usr/bin/grep $point)" ]; then
-					/bin/mkdir -p $point
-					if /sbin/mount_msdosfs -L $LANG -D CP866 -o rw $d $point; then
-						echo "#!/bin/sh" > ${point}_umount
-						echo "/sbin/umount $point || (read -t 3 stub ; exit 1) || exit 1" >> ${point}_umount
-						echo "/bin/rmdir $point" >> ${point}_umount
-						echo "/bin/rm -f ${point}_umount" >> ${point}_umount
-						/bin/chmod a+x ${point}_umount
-						echo $d -\> $point
-					else
-						/bin/rmdir $point
-					fi
-				fi
-			elif (/usr/local/bin/ntfsinfo -m $d > /dev/null 2>&1); then
-				point=$HOME/media/$(/usr/bin/basename $d)
-				if [ -z "$(echo $mount_list | /usr/bin/grep $point)" ]; then
-					/bin/mkdir -p $point
-					/sbin/mount_fusefs auto $point ntfs-3g $d $point
-					echo "#!/bin/sh" > ${point}_umount
-					echo "/sbin/umount $point || (read -t 3 stub ; exit 1) || exit 1" >> ${point}_umount
-					echo "/bin/rmdir $point" >> ${point}_umount
-					echo "/bin/rm -f ${point}_umount" >> ${point}_umount
-					/bin/chmod a+x ${point}_umount
-					echo $d -\> $point
-				fi
-			fi
-		fi
-	done
-	read -t 1 stub
-	;;
+    mount_list=$(/sbin/mount | /usr/bin/awk '{ print $1 $3 }')
+    list=$(/usr/bin/find /dev -depth 1 -name 'da*' -print | /usr/bin/sort -r)
+    for d in $list; do
+        if [ -z "$(echo $mount_list | /usr/bin/grep $d)" ]; then
+            if [ -n "$(/usr/bin/file -Ls $d | /usr/bin/grep FAT)" ]; then
+                point=$HOME/media/$(/usr/bin/basename $d)
+                if [ -z "$(echo $mount_list | /usr/bin/grep $point)" ]; then
+                    /bin/mkdir -p $point
+                    if /sbin/mount_msdosfs -L $LANG -D CP866 -o rw $d $point; then
+                        echo "#!/bin/sh" > ${point}_umount
+                        echo "/sbin/umount $point || (read -t 3 stub ; exit 1) || exit 1" >> ${point}_umount
+                        echo "/bin/rmdir $point" >> ${point}_umount
+                        echo "/bin/rm -f ${point}_umount" >> ${point}_umount
+                        /bin/chmod a+x ${point}_umount
+                        echo $d -\> $point
+                    else
+                        /bin/rmdir $point
+                    fi
+                fi
+            elif (/usr/local/bin/ntfsinfo -m $d > /dev/null 2>&1); then
+                point=$HOME/media/$(/usr/bin/basename $d)
+                if [ -z "$(echo $mount_list | /usr/bin/grep $point)" ]; then
+                    /bin/mkdir -p $point
+                    /sbin/mount_fusefs auto $point ntfs-3g $d $point
+                    echo "#!/bin/sh" > ${point}_umount
+                    echo "/sbin/umount $point || (read -t 3 stub ; exit 1) || exit 1" >> ${point}_umount
+                    echo "/bin/rmdir $point" >> ${point}_umount
+                    echo "/bin/rm -f ${point}_umount" >> ${point}_umount
+                    /bin/chmod a+x ${point}_umount
+                    echo $d -\> $point
+                fi
+            fi
+        fi
+    done
+    read -t 1 stub
+    ;;
 *)
-	echo "Unknown system: ${system}."
+    echo "Unknown system: ${system}."
 esac
