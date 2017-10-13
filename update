@@ -27,6 +27,24 @@ linux_removable() {
     fi
 }
 
+linux_on_mount() {
+    echo "#!/bin/sh" > ${1}_umount
+    echo "/usr/bin/pumount $1 || (/bin/sleep 3 ; exit 1) || exit 1" >> ${1}_umount
+    echo "/bin/rm -f $1" >> ${1}_umount
+    echo "/bin/rm -f ${1}_umount" >> ${1}_umount
+    /bin/chmod a+x ${1}_umount
+    echo $d -\> $1
+}
+
+bsd_on_mount() {
+    echo "#!/bin/sh" > ${1}_umount
+    echo "/sbin/umount $1 || (read -t 3 stub ; exit 1) || exit 1" >> ${1}_umount
+    echo "/bin/rmdir $1" >> ${1}_umount
+    echo "/bin/rm -f ${1}_umount" >> ${1}_umount
+    /bin/chmod a+x ${1}_umount
+    echo $d -\> $1
+}
+
 if [ -x /bin/uname ]; then
     system="$(/bin/uname)"
 else
@@ -45,12 +63,7 @@ Linux)
                     if /usr/bin/pmount -A -c utf8 $d 2>/dev/null; then
                         /bin/mkdir -p $(/usr/bin/dirname $point)
                         /bin/ln -s /media/$(/usr/bin/basename $d) $point
-                        echo "#!/bin/sh" > ${point}_umount
-                        echo "/usr/bin/pumount $point || (/bin/sleep 3 ; exit 1) || exit 1" >> ${point}_umount
-                        echo "/bin/rm -f $point" >> ${point}_umount
-                        echo "/bin/rm -f ${point}_umount" >> ${point}_umount
-                        /bin/chmod a+x ${point}_umount
-                        echo $d -\> $point
+                        linux_on_mount $point
                     fi
                 fi
             fi
@@ -63,32 +76,19 @@ FreeBSD)
     list=$(/usr/bin/find /dev -depth 1 -name 'da*' -print | /usr/bin/sort -r)
     for d in $list; do
         if [ -z "$(echo $mount_list | /usr/bin/grep $d)" ]; then
-            if [ -n "$(/usr/bin/file -Ls $d | /usr/bin/grep FAT)" ]; then
-                point=$HOME/media/$(/usr/bin/basename $d)
-                if [ -z "$(echo $mount_list | /usr/bin/grep $point)" ]; then
+            point=$HOME/media/$(/usr/bin/basename $d)
+            if [ -z "$(echo $mount_list | /usr/bin/grep $point)" ]; then
+                if [ -n "$(/usr/bin/file -Ls $d | /usr/bin/grep FAT)" ]; then
                     /bin/mkdir -p $point
                     if /sbin/mount_msdosfs -L $LANG -D CP866 -o rw $d $point; then
-                        echo "#!/bin/sh" > ${point}_umount
-                        echo "/sbin/umount $point || (read -t 3 stub ; exit 1) || exit 1" >> ${point}_umount
-                        echo "/bin/rmdir $point" >> ${point}_umount
-                        echo "/bin/rm -f ${point}_umount" >> ${point}_umount
-                        /bin/chmod a+x ${point}_umount
-                        echo $d -\> $point
+                        bsd_on_mount $point
                     else
                         /bin/rmdir $point
                     fi
-                fi
-            elif (/usr/local/bin/ntfsinfo -m $d > /dev/null 2>&1); then
-                point=$HOME/media/$(/usr/bin/basename $d)
-                if [ -z "$(echo $mount_list | /usr/bin/grep $point)" ]; then
+                elif (/usr/local/bin/ntfsinfo -m $d > /dev/null 2>&1); then
                     /bin/mkdir -p $point
                     /sbin/mount_fusefs auto $point ntfs-3g $d $point
-                    echo "#!/bin/sh" > ${point}_umount
-                    echo "/sbin/umount $point || (read -t 3 stub ; exit 1) || exit 1" >> ${point}_umount
-                    echo "/bin/rmdir $point" >> ${point}_umount
-                    echo "/bin/rm -f ${point}_umount" >> ${point}_umount
-                    /bin/chmod a+x ${point}_umount
-                    echo $d -\> $point
+                    bsd_on_mount $point
                 fi
             fi
         fi
