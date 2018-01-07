@@ -29,20 +29,20 @@ linux_removable() {
 
 linux_on_mount() {
     echo "#!/bin/sh" > ${1}_umount
-    echo "/usr/bin/pumount $1 || (/bin/sleep 3 ; exit 1) || exit 1" >> ${1}_umount
+    echo "/usr/bin/pumount $1 || { /bin/sleep 3; exit 1; }" >> ${1}_umount
     echo "/bin/rm -f $1" >> ${1}_umount
     echo "/bin/rm -f ${1}_umount" >> ${1}_umount
     /bin/chmod a+x ${1}_umount
-    echo $d -\> $1
+    echo $2 -\> $1
 }
 
 bsd_on_mount() {
     echo "#!/bin/sh" > ${1}_umount
-    echo "/sbin/umount $1 || (read -t 3 stub ; exit 1) || exit 1" >> ${1}_umount
+    echo "/sbin/umount $1 || { read -t 3 stub; exit 1; }" >> ${1}_umount
     echo "/bin/rmdir $1" >> ${1}_umount
     echo "/bin/rm -f ${1}_umount" >> ${1}_umount
     /bin/chmod a+x ${1}_umount
-    echo $d -\> $1
+    echo $2 -\> $1
 }
 
 if [ -x /bin/uname ]; then
@@ -58,12 +58,13 @@ Linux)
     for d in $list; do
         if [ "$(linux_removable $(/usr/bin/basename $d))" = "1" ]; then
             if [ -z "$(echo $mount_list | /bin/grep $d)" ]; then
-                point=$HOME/media/$(/usr/bin/basename $d)
+                pointname=$(/usr/bin/basename $d)
+                point=$HOME/media/$pointname
                 if [ \! -e $point ]; then
                     if /usr/bin/pmount -A -c utf8 $d 2>/dev/null; then
                         /bin/mkdir -p $(/usr/bin/dirname $point)
-                        /bin/ln -s /media/$(/usr/bin/basename $d) $point
-                        linux_on_mount $point
+                        /bin/ln -s /media/$pointname $point
+                        linux_on_mount $point $d
                     fi
                 fi
             fi
@@ -81,14 +82,14 @@ FreeBSD)
                 if [ -n "$(/usr/bin/file -Ls $d | /usr/bin/grep FAT)" ]; then
                     /bin/mkdir -p $point
                     if /sbin/mount_msdosfs -L $LANG -D CP866 -o rw $d $point; then
-                        bsd_on_mount $point
+                        bsd_on_mount $point $d
                     else
                         /bin/rmdir $point
                     fi
                 elif (/usr/local/bin/ntfsinfo -m $d > /dev/null 2>&1); then
                     /bin/mkdir -p $point
                     /sbin/mount_fusefs auto $point ntfs-3g $d $point
-                    bsd_on_mount $point
+                    bsd_on_mount $point $d
                 fi
             fi
         fi
