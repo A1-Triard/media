@@ -2,7 +2,7 @@
 
 case "$1" in
 start)
-	echo -n ' iconv warning up'
+	echo -n ' iconv warming up'
 	dev=$(/usr/bin/mktemp /tmp/iconv_fix.XXXXXX)
 	/bin/dd if=/dev/zero of=$dev bs=18432 count=1 2>/dev/null
 	/sbin/mdconfig -a -t vnode -f $dev -u 31
@@ -14,7 +14,7 @@ start)
 	/sbin/mdconfig -d -u 31
 	/bin/rm -f $dev	;;
 stop)
-	echo -n ' iconv warning up'
+	echo -n ' iconv warming up'
 	;;
 *)
 	echo "Usage: `basename $0` {start|stop}" >&2
