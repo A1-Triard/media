@@ -63,17 +63,17 @@ FreeBSD)
         if [ -z "$(echo $mount_list | /usr/bin/grep $d)" ]; then
             point=$HOME/media/$(/usr/bin/basename $d)
             if [ -z "$(echo $mount_list | /usr/bin/grep $point)" ]; then
-                if [ -n "$(/usr/bin/file -Ls $d | /usr/bin/grep FAT)" ]; then
+                if (/usr/local/bin/ntfsinfo -m $d > /dev/null 2>&1); then
+                    /bin/mkdir -p $point
+                    /sbin/mount_fusefs auto $point ntfs-3g $d $point
+                    bsd_on_mount $point $d
+                elif [ -n "$(/usr/bin/file -Ls $d | /usr/bin/grep FAT)" ]; then
                     /bin/mkdir -p $point
                     if /sbin/mount_msdosfs -L $LANG -D CP866 -o rw $d $point; then
                         bsd_on_mount $point $d
                     else
                         /bin/rmdir $point
                     fi
-                elif (/usr/local/bin/ntfsinfo -m $d > /dev/null 2>&1); then
-                    /bin/mkdir -p $point
-                    /sbin/mount_fusefs auto $point ntfs-3g $d $point
-                    bsd_on_mount $point $d
                 fi
             fi
         fi
