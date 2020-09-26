@@ -10,11 +10,12 @@
    
    3.3. Change removable devices mode: add
    
-            [localrules=10]
-            add path 'da*' mode 0660 group operator
+       [localrules=10]
+       add path 'da*' mode 0660 group operator
    
-      to `/etc/devfs.rules`, and `devfs_system_ruleset="localrules"` to `/etc/rc.conf`.
+   to `/etc/devfs.rules`, and `devfs_system_ruleset="localrules"` to `/etc/rc.conf`.
 
-   3.4. Fix msdosfs_iconv issue "Operation not permitted" issue: copy `iconv_fix.sh` into `/usr/local/etc/rc.d` directory.
+   3.4. Fix `msdosfs_iconv` "Operation not permitted" issue:
+   copy `iconv_fix.sh` into `/usr/local/etc/rc.d` directory.
 
    3.5. That's all.
