@@ -1,4 +1,4 @@
-1. Create `media` directory in user $HOME, and place `update` script into it.
+1. Create `media` directory in user `$HOME`, and place `update` script into it.
 
 2. On Linux, install `pmount` utility. That's all.
 
