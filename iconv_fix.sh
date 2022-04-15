@@ -12,7 +12,8 @@ start)
 	/sbin/umount /dev/md31
 	/bin/rmdir $point
 	/sbin/mdconfig -d -u 31
-	/bin/rm -f $dev	;;
+	/bin/rm -f $dev
+	;;
 stop)
 	echo -n ' iconv warming up'
 	;;
