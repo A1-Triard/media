@@ -17,27 +17,31 @@ linux_is_removable() {
 }
 
 linux_on_mount() {
-    echo "#!/bin/sh" > "$1"_umount
+    point="${1}/${2}"
+    umount="${1}/umount_${2}"
+    echo "#!/bin/sh" > "$umount"
     {
         echo "set -eu"
-        echo "/usr/bin/pumount -- \"$1\" || { /bin/sleep 3; exit 1; }"
-        echo "/bin/rm -f -- \"$1\""
-        echo "/bin/rm -f -- \"$1\"_umount"
-    } >> "$1"_umount
-    /bin/chmod a+x -- "$1"_umount
-    echo__ "$2 -> $1"
+        echo "/usr/bin/pumount -- \"$point\" || { /bin/sleep 3; exit 1; }"
+        echo "/bin/rm -f -- \"$point\""
+        echo "/bin/rm -f -- \"$umount\""
+    } >> "$umount"
+    /bin/chmod a+x -- "$umount"
+    echo__ "$3 -> $point"
 }
 
 bsd_on_mount() {
-    echo "#!/bin/sh" > "$1"_umount
+    point="${1}/${2}"
+    umount="${1}/umount_${2}"
+    echo "#!/bin/sh" > "$umount"
     {
         echo "set -eu"
-        echo "/sbin/umount -- \"$1\" || { read -rt 3 stub; exit 1; }"
-        echo "/bin/rmdir -- \"$1\" || true"
-        echo "/bin/rm -f -- \"$1\"_umount"
-    } >> "$1"_umount
-    /bin/chmod a+x -- "$1"_umount
-    echo__ "$2 -> $1"
+        echo "/sbin/umount -- \"$point\" || { read -rt 3 stub; exit 1; }"
+        echo "/bin/rmdir -- \"$point\" || true"
+        echo "/bin/rm -f -- \"$umount\""
+    } >> "$umount"
+    /bin/chmod a+x -- "$umount"
+    echo__ "$3 -> $point"
 }
 
 if [ -x /bin/uname ]; then
@@ -63,7 +67,7 @@ Linux)
                     if /usr/bin/pmount -A -c utf8 -- "$dev" 2>/dev/null; then
                         /bin/mkdir -p -- "$point_dir" \
                             && /bin/ln -s -- /media/"$dev_name" "$point" \
-                            && linux_on_mount "$point" "$dev"
+                            && linux_on_mount "$point_dir" "$dev_name" "$dev"
                     fi
                 fi
             fi
@@ -84,7 +88,7 @@ FreeBSD)
                 if (/usr/local/bin/ntfsinfo -m -- "$dev" > /dev/null 2>&1); then
                     if /bin/mkdir -p -- "$point"; then
                         if /sbin/mount_fusefs -- auto "$point" ntfs-3g "$dev" "$point"; then
-                            bsd_on_mount "$point" "$dev"
+                            bsd_on_mount "$point_dir" "$dev_name" "$dev"
                         else
                             /bin/rmdir -- "$point" || true
                         fi
@@ -92,7 +96,7 @@ FreeBSD)
                 elif /usr/bin/file -Ls -- "$dev" | /usr/bin/grep -q FAT; then
                     if /bin/mkdir -p -- "$point"; then
                         if /sbin/mount_msdosfs -L "$LANG" -D CP866 -o rw -- "$dev" "$point"; then
-                            bsd_on_mount "$point" "$dev"
+                            bsd_on_mount "$point_dir" "$dev_name" "$dev"
                         else
                             /bin/rmdir -- "$point" || true
                         fi
