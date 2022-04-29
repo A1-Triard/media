@@ -6,7 +6,7 @@ echo__() {
 }
 
 linux_is_removable() {
-    dev="$(echo__ "$1" | /usr/bin/sed 's/[0-9]+$//')"
+    dev="$(echo__ "$1" | /usr/bin/sed -E 's/[0-9]+$//')"
     removable_flag=/sys/block/"$dev"/removable
 
     if [ -r "$removable_flag" ]; then
@@ -48,7 +48,7 @@ fi
 
 mount_list="$(/usr/bin/findmnt -nc -o SOURCE)"
 
-point_dir="$(echo__ "$HOME/media" | /usr/bin/sed 's/[^/A-Za-z0-9]//g')"
+point_dir="$(echo__ "$HOME/media" | /usr/bin/sed -E 's/[^/A-Za-z0-9]//g')"
 
 case "$system" in
 Linux)
