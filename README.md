@@ -1,8 +1,8 @@
-1. Create `media` directory in user `$HOME`, and place `update` script into it.
+1. Create `media` directory in user `$HOME`, and place `refresh` script into it.
 
-2. On Linux, install `pmount` utility. That's all.
+2. On Linux install `pmount` utility. That's all.
 
-3. On BSD perform the following steps.
+3. On BSD install `ntfsprogs` package/port, and perform the following steps.
 
    3.1. Enable `fusefs` kmod loading: add `fusefs_load="YES"` to `/boot/loader.conf`.
 
