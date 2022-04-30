@@ -46,8 +46,11 @@ bsd_on_mount() {
 
 if [ -x /bin/uname ]; then
     system="$(/bin/uname)"
-else
+elif [ -x /usr/bin/uname ]; then
     system="$(/usr/bin/uname)"
+else
+    echo "Cannot execute 'uname'."
+    exit 1
 fi
 
 mount_list="$(/usr/bin/findmnt -nc -o SOURCE)"
@@ -108,5 +111,5 @@ FreeBSD)
     read -rt 1 stub
     ;;
 *)
-    echo "Unknown system: ${system}."
+    echo "Unknown system '$system'."
 esac
