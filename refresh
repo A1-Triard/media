@@ -64,7 +64,8 @@ Linux)
         dev_name="$(/usr/bin/basename -- "$dev")"
         is_removable="$(linux_is_removable "$dev_name")"
         if [ "$is_removable" = 1 ]; then
-            if echo__ "$mount_list" | { ! /bin/grep -qe ^"$dev"'$'; }; then # $dev does not contain dangerous chars, so it is safe
+            # $dev does not contain dangerous chars, so the following grep is safe
+            if echo__ "$mount_list" | { ! /bin/grep -qe ^"$dev"'$'; }; then
                 point="$point_dir/$dev_name"
                 if ! [ -e "$point" ]; then
                     if /usr/bin/pmount -A -c utf8 -- "$dev" 2>/dev/null; then
