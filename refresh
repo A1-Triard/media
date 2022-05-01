@@ -55,7 +55,7 @@ fi
 
 mount_list="$(/usr/bin/findmnt -nc -o SOURCE)"
 
-point_dir="$(echo__ "$HOME/media" | /usr/bin/sed -E 's/[^/A-Za-z0-9]//g')"
+point_dir="$(echo__ "$HOME/media" | /usr/bin/sed -E 's/[^/_A-Za-z0-9]//g')"
 
 case "$system" in
 Linux)
