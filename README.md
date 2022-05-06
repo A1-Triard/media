@@ -5,6 +5,7 @@
    perform the folloing steps.
 
    2.1. Put `51-removable-disks.rules` to `/etc/udev/rules.d`.
+
    2.2. Change group name in `GROUP="storage"` directive in this file from `storage`
         to appropriate name in your distributive. Often it is `plugdev`.
 
