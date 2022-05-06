@@ -1,6 +1,12 @@
 1. Create `media` directory in user `$HOME`, and place `refresh` script into it.
 
-2. On Linux install `pmount` utility. That's all.
+2. On Linux install `pmount` utility. That's all,
+   but if you also want to have correct device file access rights,
+   perform the folloing steps.
+
+   2.1. Put `51-removable-disks.rules` to `/etc/udev/rules.d`.
+   2.2. Change group name in `GROUP="storage"` directive in this file from `storage`
+        to appropriate name in your distributive. Often it is `plugdev`.
 
 3. On BSD install `ntfsprogs` package/port, and perform the following steps.
 
@@ -17,5 +23,3 @@
 
    3.4. Fix `msdosfs_iconv` "Operation not permitted" issue:
    copy `iconv_fix.sh` into `/usr/local/etc/rc.d` directory.
-
-   3.5. That's all.
