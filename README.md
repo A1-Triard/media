@@ -17,7 +17,7 @@
    3.3. Change removable devices mode: add
    
        [localrules=10]
-       add path 'da*' mode 0660 group operator
+       add path 'da[0-9]*' mode 0660 group operator
    
    to `/etc/devfs.rules`, and `devfs_system_ruleset="localrules"` to `/etc/rc.conf`.
 
