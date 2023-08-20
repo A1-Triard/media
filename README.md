@@ -2,7 +2,7 @@
 
 2. On Linux install `pmount` utility. That's all,
    but if you also want to have correct device file access rights,
-   perform the folloing steps.
+   perform the following steps.
 
    2.1. Put `51-removable-disks.rules` to `/etc/udev/rules.d`.
 
