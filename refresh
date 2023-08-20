@@ -59,7 +59,7 @@ point_dir="$(echo__ "$HOME/media" | /usr/bin/sed -E 's/[^/_A-Za-z0-9]//g')"
 
 case "$system" in
 Linux)
-    dev_list=$(/usr/bin/find /dev -maxdepth 1 -regex '/dev/[sh]d[a-z]+[0-9]*' -print | /usr/bin/sort -r)
+    dev_list=$(/usr/bin/find /dev -maxdepth 1 -regex '/dev/(([sh]d[a-z]+[0-9]*)|(mmcblk[0-9]+(p[0-9]+)?))' -print | /usr/bin/sort -r)
     for dev in $dev_list; do
         dev_name="$(/usr/bin/basename -- "$dev")"
         is_removable="$(linux_is_removable "$dev_name")"
