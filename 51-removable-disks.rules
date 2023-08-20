@@ -1,1 +1,2 @@
 SUBSYSTEM=="block", PROGRAM="/bin/sh -c 'if d=\"$$(/usr/bin/basename -- \"%p\" | /usr/bin/sed -E '\"'\"'s/[0-9]+$$//'\"'\"')\" && f=/sys/block/\"$$d\"/removable && [ -r \"$$f\" ]; then /usr/bin/cat -- \"$$f\"; else echo 0; fi'", RESULT=="1", GROUP="storage"
+SUBSYSTEM=="block", PROGRAM="/bin/sh -c 'if d=\"$$(/usr/bin/basename -- \"%p\" | /usr/bin/sed -E '\"'\"'s/[0-9]+(p[0-9]+)*$$//'\"'\"')\" && [ \"$$d\" = \"mmcblk\" ]; then echo 1; else echo 0; fi'", RESULT=="1", GROUP="storage"
