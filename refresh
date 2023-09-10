@@ -78,6 +78,8 @@ Linux)
                             && /bin/ln -s -- /media/"$dev_name" "$point" \
                             && linux_on_mount "$point_dir" "$dev_name" "$dev"
                     fi
+                else
+                    echo__ "Cannot mount $dev: $point already exist."
                 fi
             fi
         fi
