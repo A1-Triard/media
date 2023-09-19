@@ -58,12 +58,12 @@ else
     exit 1
 fi
 
-mount_list="$(/usr/bin/findmnt -nc -o SOURCE)"
 
 point_dir="$(echo__ "$HOME/media" | /usr/bin/sed -E 's/[^/_A-Za-z0-9]//g')"
 
 case "$system" in
 Linux)
+    mount_list="$(/usr/bin/findmnt -nc -o SOURCE)"
     dev_list=$(/usr/bin/find /dev -maxdepth 1 -regextype egrep -regex '/dev/(([sh]d[a-z]+[0-9]*)|(mmcblk[0-9]+p[0-9]+))' -print | /usr/bin/sort -r)
     for dev in $dev_list; do
         dev_name="$(/usr/bin/basename -- "$dev")"
@@ -87,6 +87,7 @@ Linux)
     /bin/sleep 1
     ;;
 FreeBSD)
+    mount_list="$(/usr/bin/findmnt -nc -o SOURCE)"
     dev_list=$(/usr/bin/find /dev -depth 1 -regex '/dev/da[0-9]+(s[0-9]+)?' -print | /usr/bin/sort -r)
     for dev in $dev_list; do
         # $dev does not contain dangerous chars, so the following grep is safe
