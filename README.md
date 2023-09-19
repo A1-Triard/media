@@ -12,6 +12,7 @@
 3. On BSD install `fusefs-ntfs`, `jq` packages/ports, and perform the following steps.
 
    3.1. Enable `fusefs` kmod loading:
+
         ```sh
         # sysrc kld_list+="fusefs"
         ```
