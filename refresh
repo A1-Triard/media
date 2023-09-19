@@ -87,7 +87,7 @@ Linux)
     /bin/sleep 1
     ;;
 FreeBSD)
-    mount_list="$(/usr/bin/findmnt -nc -o SOURCE)"
+    mount_list="$(/sbin/mount -p --libxo json | /usr/local/bin/jq --raw-output '.mount.fstab.[] | .device')"
     dev_list=$(/usr/bin/find /dev -depth 1 -regex '/dev/da[0-9]+(s[0-9]+)?' -print | /usr/bin/sort -r)
     for dev in $dev_list; do
         # $dev does not contain dangerous chars, so the following grep is safe
