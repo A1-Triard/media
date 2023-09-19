@@ -13,9 +13,7 @@
 
    3.1. Enable `fusefs` kmod loading:
 
-   ```sh
-   # sysrc kld_list+="fusefs"
-   ```
+       # sysrc kld_list+="fusefs"
 
    3.2. Allow users mount devices: add `vfs.usermount=1` to `/etc/sysctl.conf`.
    
