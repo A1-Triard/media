@@ -86,7 +86,7 @@ bsd_mount() {
         echo "    echo__ \"$dev -> $point\""
         echo "}"
         echo ""
-        echo "if { /usr/local/bin/ntfsinfo -m -- \"$dev\" > /dev/null 2>&1; }; then"
+        echo "if { /usr/local/bin/ntfsinfo -m \"$dev\" > /dev/null 2>&1; }; then"
         echo "    if /bin/mkdir -p -- \"$point\"; then"
         echo "        if /sbin/mount_fusefs -- auto \"$point\" ntfs-3g \"$dev\" \"$point\"; then"
         echo "            on_mount"
@@ -134,7 +134,7 @@ Linux)
     ;;
 FreeBSD)
     /bin/rm -f -- "$point_dir"/mount_*
-    dev_list=$(/usr/bin/find -E /dev -depth 1 -regex '/dev/da[0-9]+(s[0-9]+)?' -print | /usr/bin/sort -r)
+    dev_list=$(/usr/bin/find -E /dev -depth 1 -regex '/dev/da[0-9]+([sp][0-9]+)?' -print | /usr/bin/sort -r)
     for dev in $dev_list; do
         dev_name="$(/usr/bin/basename -- "$dev")"
         bsd_mount "$dev" "$point_dir" "$dev_name"
