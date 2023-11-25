@@ -117,7 +117,7 @@ else
     exit 1
 fi
 
-point_dir="$HOME/media"
+point_dir="$(dirname "$(realpath "$0")")"
 
 case "$system" in
 Linux)
