@@ -9,11 +9,11 @@
    2.2. Change group name in `GROUP="storage"` directive in this file from `storage`
         to appropriate name in your distributive. Often it is `plugdev`.
 
-3. On BSD install `fusefs-ntfs`, `jq` packages/ports, and perform the following steps.
+3. On BSD install `fusefs-ntfs` package/port, and perform the following steps.
 
    3.1. Enable `fusefs` kmod loading:
 
-       # sysrc kld_list+="fusefs"
+       # sysrc kld_list+=" fusefs"
 
    3.2. Allow users mount devices: add `vfs.usermount=1` to `/etc/sysctl.conf`.
    
@@ -26,3 +26,5 @@
 
    3.4. Fix `msdosfs_iconv` "Operation not permitted" issue:
    copy `iconv_fix.sh` into `/usr/local/etc/rc.d` directory.
+  
+   3.5 Reboot.

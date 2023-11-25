@@ -21,32 +21,91 @@ linux_is_removable() {
     fi
 }
 
-linux_on_mount() {
-    point="${1}/${2}"
-    umount="${1}/umount_${2}"
-    echo "#!/bin/sh" > "$umount"
+linux_mount() {
+    dev_name="${1}"
+    point_dir="${2}"
+    point="${2}/${3}"
+    mount="${2}/mount_${3}"
+    umount="${2}/umount_${3}"
+    echo "#!/bin/sh" > "$mount"
     {
         echo "set -eu"
-        echo "/usr/bin/pumount -- \"$point\" || { /bin/sleep 3; exit 1; }"
-        echo "/bin/rm -f -- \"$point\""
-        echo "/bin/rm -f -- \"$umount\""
-    } >> "$umount"
-    /bin/chmod a+x -- "$umount"
-    echo__ "$3 -> $point"
+        echo ""
+        echo "echo__() {"
+        echo "    printf \"%s\\n\" \"\$1\""
+        echo "}"
+        echo ""
+        echo "on_mount() {"
+        echo "    echo \"#!/bin/sh\" > \"$umount\""
+        echo "    {"
+        echo "        echo \"set -eu\""
+        echo "        echo \"/usr/bin/pumount -- \\\"$point\\\" || { /bin/sleep 3; exit 1; }\""
+        echo "        echo \"/bin/rm -f -- \\\"$point\\\"\""
+        echo "        echo \"/bin/rm -f -- \\\"$umount\\\"\""
+        echo "    } >> \"$umount\""
+        echo "    /bin/chmod a+x -- \"$umount\""
+        echo "    echo__ \"/dev/$dev_name -> $point\""
+        echo "}"
+        echo ""
+        echo "if ! [ -e \"$point\" ]; then"
+        echo "    if /usr/bin/pmount -A -c utf8 -- /dev/\"$dev_name\" 2>/dev/null; then"
+        echo "        /bin/mkdir -p -- \"$point_dir\" \\"
+        echo "            && /bin/ln -s -- /media/\"$dev_name\" \"$point\" \\"
+        echo "            && on_mount"
+        echo "    fi"
+        echo "else"
+        echo "    echo__ \"Cannot mount /dev/$dev_name: $point already exist.\""
+        echo "fi"
+        echo "/bin/sleep 1"
+    } >> "$mount"
+    /bin/chmod a+x -- "$mount"
 }
 
-bsd_on_mount() {
-    point="${1}/${2}"
-    umount="${1}/umount_${2}"
-    echo "#!/bin/sh" > "$umount"
+bsd_mount() {
+    dev="${1}"
+    point="${2}/${3}"
+    mount="${2}/mount_${3}"
+    umount="${2}/umount_${3}"
+    echo "#!/bin/sh" > "$mount"
     {
         echo "set -eu"
-        echo "/sbin/umount -- \"$point\" || { read -rt 3 stub; exit 1; }"
-        echo "/bin/rmdir -- \"$point\" || true"
-        echo "/bin/rm -f -- \"$umount\""
-    } >> "$umount"
-    /bin/chmod a+x "$umount"
-    echo__ "$3 -> $point"
+        echo ""
+        echo "echo__() {"
+        echo "    printf \"%s\\n\" \"\$1\""
+        echo "}"
+        echo ""
+        echo "on_mount() {"
+        echo "    echo \"#!/bin/sh\" > \"$umount\""
+        echo "    {"
+        echo "        echo \"set -eu\""
+        echo "        echo \"/sbin/umount -- \\\"$point\\\" || { read -rt 3 stub; exit 1; }\""
+        echo "        echo \"/bin/rmdir -- \\\"$point\\\" || true\""
+        echo "        echo \"/bin/rm -f -- \\\"$umount\\\"\""
+        echo "    } >> \"$umount\""
+        echo "    /bin/chmod a+x \"$umount\""
+        echo "    echo__ \"$dev -> $point\""
+        echo "}"
+        echo ""
+        echo "if { /usr/local/bin/ntfsinfo -m -- \"$dev\" > /dev/null 2>&1; }; then"
+        echo "    if /bin/mkdir -p -- \"$point\"; then"
+        echo "        if /sbin/mount_fusefs -- auto \"$point\" ntfs-3g \"$dev\" \"$point\"; then"
+        echo "            on_mount"
+        echo "        else"
+        echo "            /bin/rmdir -- \"$point\" || true"
+        echo "        fi"
+        echo "    fi"
+        echo "elif /usr/bin/file -Ls -- \"$dev\" | /usr/bin/grep -q FAT; then"
+        echo "    if /bin/mkdir -p -- \"$point\"; then"
+        echo "        if /sbin/mount_msdosfs -L \"\$LANG\" -D CP866 -o rw -- \"$dev\" \"$point\"; then"
+        echo "            on_mount"
+        echo "        else"
+        echo "            /bin/rmdir -- \"$point\" || true"
+        echo "        fi"
+        echo "    fi"
+        echo "fi"
+        echo "read -rt 1 stub"
+    } >> "$mount"
+    /bin/chmod a+x "$mount"
 }
 
 if [ -x /bin/uname ]; then
@@ -58,66 +117,28 @@ else
     exit 1
 fi
 
-
-point_dir="$(echo__ "$HOME/media" | /usr/bin/sed -E 's/[^/_A-Za-z0-9]//g')"
+point_dir="$HOME/media"
 
 case "$system" in
 Linux)
-    mount_list="$(/usr/bin/findmnt -nc -o SOURCE)"
-    dev_list=$(/usr/bin/find /dev -maxdepth 1 -regextype egrep -regex '/dev/(([sh]d[a-z]+[0-9]*)|(mmcblk[0-9]+p[0-9]+))' -print | /usr/bin/sort -r)
+    /bin/rm -f -- "$point_dir"/mount_*
+    dev_list=$(/usr/bin/find /dev -maxdepth 1 -regextype egrep \
+        -regex '/dev/(([sh]d[a-z]+[0-9]*)|(mmcblk[0-9]+p[0-9]+))' -print | /usr/bin/sort -r)
     for dev in $dev_list; do
         dev_name="$(/usr/bin/basename -- "$dev")"
         is_removable="$(linux_is_removable "$dev_name")"
         if [ "$is_removable" = 1 ]; then
-            # $dev does not contain dangerous chars, so the following grep is safe
-            if echo__ "$mount_list" | { ! /bin/grep -qe ^"$dev"'$'; }; then
-                point="$point_dir/$dev_name"
-                if ! [ -e "$point" ]; then
-                    if /usr/bin/pmount -A -c utf8 -- "$dev" 2>/dev/null; then
-                        /bin/mkdir -p -- "$point_dir" \
-                            && /bin/ln -s -- /media/"$dev_name" "$point" \
-                            && linux_on_mount "$point_dir" "$dev_name" "$dev"
-                    fi
-                else
-                    echo__ "Cannot mount $dev: $point already exist."
-                fi
-            fi
+            linux_mount "$dev_name" "$point_dir" "$dev_name"
         fi
     done
-    /bin/sleep 1
     ;;
 FreeBSD)
-    mount_list="$(/sbin/mount -p --libxo json | /usr/local/bin/jq --raw-output '.mount.fstab.[] | .device')"
+    /bin/rm -f -- "$point_dir"/mount_*
     dev_list=$(/usr/bin/find -E /dev -depth 1 -regex '/dev/da[0-9]+(s[0-9]+)?' -print | /usr/bin/sort -r)
     for dev in $dev_list; do
-        # $dev does not contain dangerous chars, so the following grep is safe
-        if echo__ "$mount_list" | { ! /usr/bin/grep -qe ^"$dev"'$'; }; then
-            dev_name="$(/usr/bin/basename -- "$dev")"
-            point="$point_dir/$dev_name"
-            mount_point_list="$(/sbin/mount -p --libxo json | /usr/local/bin/jq --raw-output0 '.mount.fstab.[] | .mntpoint')"
-            # $point does not contain dangerous chars, so the following grep is safe
-            if echo__ "$mount_point_list" | { ! /usr/bin/grep -qe ^"$point"'$'; }; then
-                if { /usr/local/bin/ntfsinfo -m -- "$dev" > /dev/null 2>&1; }; then
-                    if /bin/mkdir -p -- "$point"; then
-                        if /sbin/mount_fusefs -- auto "$point" ntfs-3g "$dev" "$point"; then
-                            bsd_on_mount "$point_dir" "$dev_name" "$dev"
-                        else
-                            /bin/rmdir -- "$point" || true
-                        fi
-                    fi
-                elif /usr/bin/file -Ls -- "$dev" | /usr/bin/grep -q FAT; then
-                    if /bin/mkdir -p -- "$point"; then
-                        if /sbin/mount_msdosfs -L "$LANG" -D CP866 -o rw -- "$dev" "$point"; then
-                            bsd_on_mount "$point_dir" "$dev_name" "$dev"
-                        else
-                            /bin/rmdir -- "$point" || true
-                        fi
-                    fi
-                fi
-            fi
-        fi
+        dev_name="$(/usr/bin/basename -- "$dev")"
+        bsd_mount "$dev" "$point_dir" "$dev_name"
     done
-    read -rt 1 stub
     ;;
 *)
     echo "Unknown system '$system'."
